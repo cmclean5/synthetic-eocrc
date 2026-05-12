@@ -1,6 +1,10 @@
 # synthetic-eocrc
 
-A modular framework to generate synthetic early-onset colorectal cancer exposure data in R.
+A modular framework to generate synthetic early-onset colorectal cancer exposure data in R. This work was inspired by two papers.
+The first was a large genome-wide association study of EO-CRC patients `(Laskar et al 2024)` and the second the data simulation approach adopted in `(Rein et al 2024)`  
+
+- (Laskar et al 2024) https://doi.org/10.1016/j.annonc.2024.02.008
+- (Rien et al 2024) https://arxiv.org/pdf/2410.21531
 
 ## Aim
 
@@ -43,7 +47,7 @@ The simulator is designed to:
 ## Current project structure
 
 ```text
-tumour_sim/
+synthetic-eocrc/
 ├── R/
 │   ├── utils_math.R
 │   ├── utils_sampling.R
