@@ -1,0 +1,727 @@
+{
+  "$schema": "../schemas/sim_spec.schema.json",
+  "meta": {
+    "model_name": "colorectal_early_onset",
+    "version": "0.1.0",
+    "tumour_type": "crc",
+    "description": "Early-onset colorectal cancer synthetic cohort model, configured for calendar years 1995 to 2025, with placeholder ethnicity and geography fields included for future use."
+  },
+  "study": {
+    "calendar_start": 1995,
+    "calendar_end": 2025,
+    "max_age": 50,
+    "sample_entry_cal_time": true,
+    "min_followup_time": 0.5
+  },
+  "simulation": {
+    "default_memory_model": "long",
+    "supported_memory_models": ["short", "long"]
+  },
+  "rule_resolution": {
+    "match_strategy": "most_specific",
+    "tie_breaker": "priority",
+    "default_extrapolation": "clamp"
+  },
+  "population": {
+    "entry_age": {
+      "distribution": "truncated_exponential",
+      "min": 20,
+      "max": 49,
+      "rate": 0.12
+    },
+    "sex_probs": {
+      "Female": 0.5,
+      "Male": 0.5
+    },
+    "education_probs": {
+      "Low": 0.3,
+      "Medium": 0.45,
+      "High": 0.25
+    },
+    "ses_given_education": {
+      "Low": {
+        "Low": 0.55,
+        "Medium": 0.3,
+        "High": 0.15
+      },
+      "Medium": {
+        "Low": 0.3,
+        "Medium": 0.5,
+        "High": 0.2
+      },
+      "High": {
+        "Low": 0.1,
+        "Medium": 0.35,
+        "High": 0.55
+      }
+    },
+    "ethnicity": {
+      "enabled": true,
+      "classification_system": "placeholder",
+      "levels": ["Unspecified"],
+      "assignment": {
+        "method": "fixed",
+        "value": "Unspecified"
+      }
+    },
+    "geography": {
+      "enabled": true,
+      "level": "region",
+      "classification_system": "placeholder",
+      "levels": ["Unspecified"],
+      "assignment": {
+        "method": "fixed",
+        "value": "Unspecified"
+      }
+    },
+    "family_history_models": {
+      "fh_crc": {
+        "model": "bernoulli_logit",
+        "intercept": -2.08,
+        "coefficients": {
+          "sex": {
+            "Male": 0.2
+          }
+        }
+      },
+      "fh_diabetes": {
+        "model": "bernoulli_logit",
+        "intercept": -1.42,
+        "coefficients": {
+          "ses": {
+            "Low": 0.15
+          }
+        }
+      }
+    },
+    "genetic_models": {
+      "genetic_crc_predisposition": {
+        "model": "bernoulli_logit",
+        "intercept": -5.35,
+        "coefficients": {
+          "fh_crc": 0.75
+        }
+      }
+    }
+  },
+  "latent_traits": {
+    "latent_metabolic": {
+      "model": "normal_linear",
+      "intercept": 0.0,
+      "coefficients": {
+        "sex": {
+          "Male": 0.35
+        },
+        "fh_diabetes": 0.5,
+        "ses": {
+          "Low": 0.25
+        },
+        "education": {
+          "High": -0.2
+        }
+      },
+      "sd": 0.6
+    },
+    "latent_crc": {
+      "model": "normal_linear",
+      "intercept": 0.0,
+      "coefficients": {
+        "fh_crc": 0.7,
+        "fh_diabetes": 0.15,
+        "genetic_crc_predisposition": 1.0
+      },
+      "sd": 0.5
+    }
+  },
+  "exposures": {
+    "alcohol": {
+      "enabled": true,
+      "kind": "categorical",
+      "states": [
+        "non_drinker",
+        "moderate_drinker",
+        "hazardous_drinker"
+      ],
+      "score_map": {
+        "non_drinker": 0,
+        "moderate_drinker": 1,
+        "hazardous_drinker": 2
+      },
+      "memory_models": {
+        "short": {
+          "persistence_logits": {
+            "non_drinker": 0.35,
+            "moderate_drinker": 0.25,
+            "hazardous_drinker": 0.45
+          },
+          "latent_metabolic_hazardous_coef": 0.08
+        },
+        "long": {
+          "non_if_recent_mean_lt_0_25": 0.25,
+          "moderate_if_recent_mean_between_0_75_and_1_5": 0.15,
+          "hazardous_recent_mean_coef": 0.35,
+          "hazardous_recent_prop_coef": 0.7,
+          "latent_metabolic_hazardous_coef": 0.08
+        }
+      },
+      "units_model": {
+        "non_drinker": {
+          "distribution": "point_mass",
+          "value": 0
+        },
+        "moderate_drinker": {
+          "distribution": "truncated_normal",
+          "mean": 8.0,
+          "sd": 3.5,
+          "min": 1.0,
+          "max": 14.0,
+          "long_recent_mean_coef": 1.0
+        },
+        "hazardous_drinker": {
+          "distribution": "truncated_normal",
+          "mean": 24.0,
+          "sd": 7.0,
+          "min": 15.0,
+          "max": 60.0,
+          "long_recent_mean_coef": 2.0,
+          "long_hazard_recent_prop_coef": 3.0
+        }
+      }
+    },
+    "adiposity": {
+      "enabled": true,
+      "kind": "continuous",
+      "variable": "visceral_adipose",
+      "reference_value": 25.0,
+      "latent_age_ref": 30.0,
+      "target_probability_bounds": {
+        "min": 0.01,
+        "max": 0.95
+      },
+      "obesity_threshold": 30.0,
+      "visceral_sd": 4.0,
+      "target_mapping": {
+        "method": "normal_threshold",
+        "threshold": 30.0,
+        "sd": 4.0
+      },
+      "age_effect": {
+        "age_ref": 35.0,
+        "logit_slope_per_10y": 0.22
+      },
+      "baseline_distribution": {
+        "distribution": "truncated_normal",
+        "min": 8.0,
+        "max": 70.0
+      },
+      "initial_state": {
+        "latent_metabolic_coef": 1.5
+      },
+      "dynamics": {
+        "short": {
+          "latent_ar": 0.8,
+          "latent_age_coef": 0.03,
+          "latent_alcohol_score_coef": 0.08,
+          "latent_fh_diabetes_coef": 0.18,
+          "latent_noise_sd": 0.22,
+          "mean_prev_visceral_coef": 0.6,
+          "mean_alcohol_score_coef": 0.8,
+          "mean_latent_metabolic_coef": 2.0
+        },
+        "long": {
+          "latent_ar": 0.8,
+          "latent_age_coef": 0.03,
+          "latent_recent_mean_score_coef": 0.1,
+          "latent_cum_mean_score_coef": 0.05,
+          "latent_fh_diabetes_coef": 0.18,
+          "latent_noise_sd": 0.22,
+          "mean_prev_visceral_coef": 0.5,
+          "mean_recent_visceral_coef": 0.2,
+          "mean_alcohol_score_coef": 0.6,
+          "mean_recent_mean_score_coef": 0.4,
+          "mean_latent_metabolic_coef": 1.8
+        }
+      },
+      "observation_model": {
+        "model": "bernoulli_logit",
+        "intercept": 1.0,
+        "coefficients": {
+          "ses": {
+            "Low": -0.4
+          }
+        }
+      }
+    },
+    "insulin": {
+      "enabled": true,
+      "kind": "continuous",
+      "variable": "fasting_insulin",
+      "log_scale": true,
+      "high_log_threshold": 2.7080502011,
+      "initial_state": {
+        "base_mean_log": 1.9459101491,
+        "visceral_coef": 0.03,
+        "latent_metabolic_coef": 0.1,
+        "sd": 0.25,
+        "min_log": 0.6931471806,
+        "max_log": 4.3820266347
+      },
+      "dynamics": {
+        "short": {
+          "base_mean_log": 1.9459101491,
+          "prev_log_coef": 0.65,
+          "visceral_coef": 0.035,
+          "alcohol_score_coef": 0.04,
+          "latent_metabolic_coef": 0.12,
+          "fh_diabetes_coef": 0.06,
+          "sd": 0.22,
+          "min_log": 0.6931471806,
+          "max_log": 4.3820266347
+        },
+        "long": {
+          "base_mean_log": 1.9459101491,
+          "prev_log_coef": 0.55,
+          "visceral_coef": 0.03,
+          "recent_visceral_coef": 0.015,
+          "cum_visceral_coef": 0.01,
+          "alcohol_score_coef": 0.03,
+          "recent_mean_score_coef": 0.02,
+          "latent_metabolic_coef": 0.1,
+          "fh_diabetes_coef": 0.06,
+          "sd": 0.22,
+          "min_log": 0.6931471806,
+          "max_log": 4.3820266347
+        }
+      },
+      "observation_model": {
+        "model": "bernoulli_logit",
+        "intercept": 0.8,
+        "coefficients": {
+          "fh_diabetes": 0.2,
+          "ses": {
+            "Low": -0.25
+          }
+        }
+      }
+    }
+  },
+  "diseases": {
+    "crc": {
+      "enabled": true,
+      "label": "Early-onset colorectal cancer",
+      "event_name": "eo_crc",
+      "incidence_model": {
+        "type": "piecewise_exponential_log_linear",
+        "intercept": -13.66,
+        "age_ref": 20.0,
+        "coefficients": {
+          "age_per_year": 0.08,
+          "fh_crc": 1.15,
+          "fh_diabetes": 0.3,
+          "genetic_crc_predisposition": 2.3,
+          "sex": {
+            "Male": 0.1
+          },
+          "ses": {
+            "Low": 0.1
+          },
+          "education": {
+            "High": -0.08
+          },
+          "alcohol_score_short": 0.2,
+          "alcohol_score_long": 0.12,
+          "recent_mean_score": 0.1,
+          "haz_recent_prop": 0.12,
+          "visceral_current_per_unit": 0.03,
+          "visceral_recent_per_unit": 0.015,
+          "visceral_cum_per_unit": 0.01,
+          "log_insulin_current": 0.18,
+          "recent_log_insulin": 0.1,
+          "high_insulin_recent_prop": 0.08,
+          "latent_crc": 0.25
+        },
+        "time_trend_target": "disease.crc.apc"
+      },
+      "stage_model": {
+        "type": "two_stage_logit_multinomial",
+        "advanced_logit_intercept": -0.3,
+        "advanced_logit_coefficients": {
+          "ses": {
+            "Low": 0.45
+          },
+          "latent_crc": 0.18,
+          "visceral_current_per_unit": 0.03,
+          "log_insulin_current": 0.08,
+          "cum_visceral_per_unit": 0.02,
+          "recent_log_insulin": 0.08,
+          "interval_gap": 0.1
+        },
+        "early_stage_probs": {
+          "I": 0.55,
+          "II": 0.45
+        },
+        "advanced_stage_probs": {
+          "III": 0.65,
+          "IV": 0.35
+        }
+      }
+    }
+  },
+  "mortality": {
+    "death_other": {
+      "type": "piecewise_exponential_log_linear",
+      "intercept": -9.5,
+      "age_ref": 20.0,
+      "coefficients": {
+        "age_per_year": 0.07,
+        "sex": {
+          "Male": 0.25
+        },
+        "ses": {
+          "Low": 0.2
+        },
+        "fh_diabetes": 0.15,
+        "latent_metabolic": 0.1
+      }
+    }
+  },
+  "rules": [
+    {
+      "target": "alcohol.state_probs",
+      "selectors": {
+        "age_range": [18, 50]
+      },
+      "period": {
+        "start": 2010,
+        "end": 2025,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 1,
+      "source": "example_overall_alcohol_targets",
+      "anchors": [
+        {
+          "year": 2010,
+          "value": {
+            "non_drinker": 0.1,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.3
+          }
+        },
+        {
+          "year": 2025,
+          "value": {
+            "non_drinker": 0.2,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "target": "alcohol.state_probs",
+      "selectors": {
+        "age_range": [18, 50],
+        "ses": "High"
+      },
+      "period": {
+        "start": 2010,
+        "end": 2025,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_ses_specific_alcohol_targets",
+      "anchors": [
+        {
+          "year": 2010,
+          "value": {
+            "non_drinker": 0.1,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.3
+          }
+        },
+        {
+          "year": 2025,
+          "value": {
+            "non_drinker": 0.15,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "target": "alcohol.state_probs",
+      "selectors": {
+        "age_range": [18, 50],
+        "ses": "Medium"
+      },
+      "period": {
+        "start": 2010,
+        "end": 2025,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "derived_from_overall_low_high_with_weights",
+      "anchors": [
+        {
+          "year": 2010,
+          "value": {
+            "non_drinker": 0.1,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.3
+          }
+        },
+        {
+          "year": 2025,
+          "value": {
+            "non_drinker": 0.1935,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.2065
+          }
+        }
+      ]
+    },
+    {
+      "target": "alcohol.state_probs",
+      "selectors": {
+        "age_range": [18, 50],
+        "ses": "Low"
+      },
+      "period": {
+        "start": 2010,
+        "end": 2025,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_ses_specific_alcohol_targets",
+      "anchors": [
+        {
+          "year": 2010,
+          "value": {
+            "non_drinker": 0.1,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.3
+          }
+        },
+        {
+          "year": 2025,
+          "value": {
+            "non_drinker": 0.25,
+            "moderate_drinker": 0.6,
+            "hazardous_drinker": 0.15
+          }
+        }
+      ]
+    },
+
+    {
+      "target": "adiposity.obesity_probability.base",
+      "selectors": {
+        "sex": "Female",
+        "ses": "High"
+      },
+      "period": {
+        "start": 2001,
+        "end": 2020,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_obesity_targets",
+      "anchors": [
+        {
+          "year": 2001,
+          "value": 0.2
+        },
+        {
+          "year": 2020,
+          "value": 0.2
+        }
+      ]
+    },
+    {
+      "target": "adiposity.obesity_probability.base",
+      "selectors": {
+        "sex": "Male",
+        "ses": "High"
+      },
+      "period": {
+        "start": 2001,
+        "end": 2020,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_obesity_targets",
+      "anchors": [
+        {
+          "year": 2001,
+          "value": 0.2
+        },
+        {
+          "year": 2020,
+          "value": 0.25
+        }
+      ]
+    },
+    {
+      "target": "adiposity.obesity_probability.base",
+      "selectors": {
+        "sex": "Female",
+        "ses": "Medium"
+      },
+      "period": {
+        "start": 2001,
+        "end": 2020,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "midpoint_between_high_and_low_examples",
+      "anchors": [
+        {
+          "year": 2001,
+          "value": 0.275
+        },
+        {
+          "year": 2020,
+          "value": 0.3
+        }
+      ]
+    },
+    {
+      "target": "adiposity.obesity_probability.base",
+      "selectors": {
+        "sex": "Male",
+        "ses": "Medium"
+      },
+      "period": {
+        "start": 2001,
+        "end": 2020,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "midpoint_between_high_and_low_examples",
+      "anchors": [
+        {
+          "year": 2001,
+          "value": 0.225
+        },
+        {
+          "year": 2020,
+          "value": 0.275
+        }
+      ]
+    },
+    {
+      "target": "adiposity.obesity_probability.base",
+      "selectors": {
+        "sex": "Female",
+        "ses": "Low"
+      },
+      "period": {
+        "start": 2001,
+        "end": 2020,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_obesity_targets",
+      "anchors": [
+        {
+          "year": 2001,
+          "value": 0.35
+        },
+        {
+          "year": 2020,
+          "value": 0.4
+        }
+      ]
+    },
+    {
+      "target": "adiposity.obesity_probability.base",
+      "selectors": {
+        "sex": "Male",
+        "ses": "Low"
+      },
+      "period": {
+        "start": 2001,
+        "end": 2020,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "anchor_points",
+      "scale": "identity",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_obesity_targets",
+      "anchors": [
+        {
+          "year": 2001,
+          "value": 0.25
+        },
+        {
+          "year": 2020,
+          "value": 0.3
+        }
+      ]
+    },
+
+    {
+      "target": "disease.crc.apc",
+      "selectors": {
+        "disease": "crc"
+      },
+      "period": {
+        "start": 1995,
+        "end": 2010,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "annual_percent_change",
+      "scale": "log",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_crc_calendar_trend",
+      "annual_rate": 0.005
+    },
+    {
+      "target": "disease.crc.apc",
+      "selectors": {
+        "disease": "crc"
+      },
+      "period": {
+        "start": 2010,
+        "end": 2025,
+        "extrapolation": "clamp"
+      },
+      "rule_type": "annual_percent_change",
+      "scale": "log",
+      "operation": "set",
+      "priority": 10,
+      "source": "example_crc_calendar_trend",
+      "annual_rate": 0.01
+    }
+  ]
+}

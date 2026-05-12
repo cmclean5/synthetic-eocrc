@@ -1,0 +1,1144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edinburgh.example/schemas/sim_spec.schema.json",
+  "title": "Tumour simulation specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "study",
+    "simulation",
+    "rule_resolution",
+    "population",
+    "latent_traits",
+    "exposures",
+    "diseases",
+    "mortality",
+    "rules"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/meta"
+    },
+    "study": {
+      "$ref": "#/$defs/study"
+    },
+    "simulation": {
+      "$ref": "#/$defs/simulation"
+    },
+    "rule_resolution": {
+      "$ref": "#/$defs/ruleResolution"
+    },
+    "population": {
+      "$ref": "#/$defs/population"
+    },
+    "latent_traits": {
+      "$ref": "#/$defs/latentTraits"
+    },
+    "exposures": {
+      "$ref": "#/$defs/exposures"
+    },
+    "diseases": {
+      "$ref": "#/$defs/diseases"
+    },
+    "mortality": {
+      "$ref": "#/$defs/mortality"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    }
+  },
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_name",
+        "version",
+        "tumour_type"
+      ],
+      "properties": {
+        "model_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tumour_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calendar_start",
+        "calendar_end",
+        "max_age",
+        "sample_entry_cal_time",
+        "min_followup_time"
+      ],
+      "properties": {
+        "calendar_start": {
+          "type": "number"
+        },
+        "calendar_end": {
+          "type": "number"
+        },
+        "max_age": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "sample_entry_cal_time": {
+          "type": "boolean"
+        },
+        "min_followup_time": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+
+    "simulation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_memory_model",
+        "supported_memory_models"
+      ],
+      "properties": {
+        "default_memory_model": {
+          "type": "string",
+          "enum": ["short", "long"]
+        },
+        "supported_memory_models": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": ["short", "long"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+
+    "ruleResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "match_strategy",
+        "tie_breaker",
+        "default_extrapolation"
+      ],
+      "properties": {
+        "match_strategy": {
+          "type": "string",
+          "enum": ["most_specific"]
+        },
+        "tie_breaker": {
+          "type": "string",
+          "enum": ["priority", "priority_then_latest_period_start"]
+        },
+        "default_extrapolation": {
+          "type": "string",
+          "enum": ["clamp", "error", "nearest"]
+        }
+      }
+    },
+
+    "probMapSex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Female", "Male"],
+      "properties": {
+        "Female": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "Male": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+
+    "probMap3Level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Low", "Medium", "High"],
+      "properties": {
+        "Low": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "Medium": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "High": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+
+    "namedProbabilityMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+
+    "fixedAttributeAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "value"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "fixed"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+
+    "categoricalAttributeAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "probs"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "categorical"
+        },
+        "probs": {
+          "$ref": "#/$defs/namedProbabilityMap"
+        }
+      }
+    },
+
+    "attributeAssignment": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fixedAttributeAssignment"
+        },
+        {
+          "$ref": "#/$defs/categoricalAttributeAssignment"
+        }
+      ]
+    },
+
+    "ethnicitySpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "levels", "assignment"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "classification_system": {
+          "type": "string"
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "assignment": {
+          "$ref": "#/$defs/attributeAssignment"
+        }
+      }
+    },
+
+    "geographySpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "level", "levels", "assignment"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "country",
+            "nation",
+            "region",
+            "health_board",
+            "local_authority",
+            "postcode_area",
+            "custom"
+          ]
+        },
+        "classification_system": {
+          "type": "string"
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "assignment": {
+          "$ref": "#/$defs/attributeAssignment"
+        }
+      }
+    },
+
+    "entryAgeDistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "distribution",
+        "min",
+        "max",
+        "rate"
+      ],
+      "properties": {
+        "distribution": {
+          "type": "string",
+          "enum": ["truncated_exponential"]
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "rate": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+
+    "coefficientValue": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+
+    "logitModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "intercept",
+        "coefficients"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["bernoulli_logit"]
+        },
+        "intercept": {
+          "type": "number"
+        },
+        "coefficients": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/coefficientValue"
+          }
+        }
+      }
+    },
+
+    "normalLinearModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "intercept",
+        "coefficients",
+        "sd"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["normal_linear"]
+        },
+        "intercept": {
+          "type": "number"
+        },
+        "coefficients": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/coefficientValue"
+          }
+        },
+        "sd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_age",
+        "sex_probs",
+        "education_probs",
+        "ses_given_education",
+        "ethnicity",
+        "geography",
+        "family_history_models",
+        "genetic_models"
+      ],
+      "properties": {
+        "entry_age": {
+          "$ref": "#/$defs/entryAgeDistribution"
+        },
+        "sex_probs": {
+          "$ref": "#/$defs/probMapSex"
+        },
+        "education_probs": {
+          "$ref": "#/$defs/probMap3Level"
+        },
+        "ses_given_education": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Low", "Medium", "High"],
+          "properties": {
+            "Low": {
+              "$ref": "#/$defs/probMap3Level"
+            },
+            "Medium": {
+              "$ref": "#/$defs/probMap3Level"
+            },
+            "High": {
+              "$ref": "#/$defs/probMap3Level"
+            }
+          }
+        },
+        "ethnicity": {
+          "$ref": "#/$defs/ethnicitySpec"
+        },
+        "geography": {
+          "$ref": "#/$defs/geographySpec"
+        },
+        "family_history_models": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/logitModel"
+          }
+        },
+        "genetic_models": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/logitModel"
+          }
+        }
+      }
+    },
+
+    "latentTraits": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/normalLinearModel"
+      }
+    },
+
+    "scoreMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+
+    "simpleBounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distribution", "min", "max"],
+      "properties": {
+        "distribution": {
+          "type": "string",
+          "enum": ["truncated_normal"]
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      }
+    },
+
+    "probabilityBounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+
+    "alcoholExposure": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "kind",
+        "states",
+        "score_map",
+        "memory_models",
+        "units_model"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["categorical"]
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "score_map": {
+          "$ref": "#/$defs/scoreMap"
+        },
+        "memory_models": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["short", "long"],
+          "properties": {
+            "short": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "long": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "units_model": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "adiposityDynamicsShort": {
+      "type": "object",
+      "required": ["latent_noise_sd"],
+      "properties": {
+        "latent_noise_sd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "adiposityDynamicsLong": {
+      "type": "object",
+      "required": ["latent_noise_sd"],
+      "properties": {
+        "latent_noise_sd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "adiposityExposure": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "kind",
+        "variable",
+        "reference_value",
+        "latent_age_ref",
+        "target_probability_bounds",
+        "obesity_threshold",
+        "visceral_sd",
+        "target_mapping",
+        "age_effect",
+        "baseline_distribution",
+        "initial_state",
+        "dynamics",
+        "observation_model"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["continuous"]
+        },
+        "variable": {
+          "type": "string"
+        },
+        "reference_value": {
+          "type": "number"
+        },
+        "latent_age_ref": {
+          "type": "number"
+        },
+        "target_probability_bounds": {
+          "$ref": "#/$defs/probabilityBounds"
+        },
+        "obesity_threshold": {
+          "type": "number"
+        },
+        "visceral_sd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "target_mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "threshold", "sd"],
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": ["normal_threshold"]
+            },
+            "threshold": {
+              "type": "number"
+            },
+            "sd": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "age_effect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["age_ref", "logit_slope_per_10y"],
+          "properties": {
+            "age_ref": {
+              "type": "number"
+            },
+            "logit_slope_per_10y": {
+              "type": "number"
+            }
+          }
+        },
+        "baseline_distribution": {
+          "$ref": "#/$defs/simpleBounds"
+        },
+        "initial_state": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "dynamics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["short", "long"],
+          "properties": {
+            "short": {
+              "$ref": "#/$defs/adiposityDynamicsShort"
+            },
+            "long": {
+              "$ref": "#/$defs/adiposityDynamicsLong"
+            }
+          }
+        },
+        "observation_model": {
+          "$ref": "#/$defs/logitModel"
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "insulinExposure": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "kind",
+        "variable",
+        "log_scale",
+        "high_log_threshold",
+        "initial_state",
+        "dynamics",
+        "observation_model"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["continuous"]
+        },
+        "variable": {
+          "type": "string"
+        },
+        "log_scale": {
+          "type": "boolean"
+        },
+        "high_log_threshold": {
+          "type": "number"
+        },
+        "initial_state": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "dynamics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["short", "long"],
+          "properties": {
+            "short": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "long": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "observation_model": {
+          "$ref": "#/$defs/logitModel"
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "exposures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alcohol",
+        "adiposity",
+        "insulin"
+      ],
+      "properties": {
+        "alcohol": {
+          "$ref": "#/$defs/alcoholExposure"
+        },
+        "adiposity": {
+          "$ref": "#/$defs/adiposityExposure"
+        },
+        "insulin": {
+          "$ref": "#/$defs/insulinExposure"
+        }
+      }
+    },
+
+    "incidenceModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "intercept",
+        "age_ref",
+        "coefficients",
+        "time_trend_target"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["piecewise_exponential_log_linear"]
+        },
+        "intercept": {
+          "type": "number"
+        },
+        "age_ref": {
+          "type": "number"
+        },
+        "coefficients": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/coefficientValue"
+          }
+        },
+        "time_trend_target": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+
+    "stageProbMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+
+    "stageModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "advanced_logit_intercept",
+        "advanced_logit_coefficients",
+        "early_stage_probs",
+        "advanced_stage_probs"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["two_stage_logit_multinomial"]
+        },
+        "advanced_logit_intercept": {
+          "type": "number"
+        },
+        "advanced_logit_coefficients": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/coefficientValue"
+          }
+        },
+        "early_stage_probs": {
+          "$ref": "#/$defs/stageProbMap"
+        },
+        "advanced_stage_probs": {
+          "$ref": "#/$defs/stageProbMap"
+        }
+      }
+    },
+
+    "diseaseSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "label",
+        "event_name",
+        "incidence_model"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "event_name": {
+          "type": "string"
+        },
+        "incidence_model": {
+          "$ref": "#/$defs/incidenceModel"
+        },
+        "stage_model": {
+          "$ref": "#/$defs/stageModel"
+        }
+      }
+    },
+
+    "diseases": {
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_]*$": {
+          "$ref": "#/$defs/diseaseSpec"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "mortalityModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "intercept",
+        "age_ref",
+        "coefficients"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["piecewise_exponential_log_linear"]
+        },
+        "intercept": {
+          "type": "number"
+        },
+        "age_ref": {
+          "type": "number"
+        },
+        "coefficients": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/coefficientValue"
+          }
+        }
+      }
+    },
+
+    "mortality": {
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_]*$": {
+          "$ref": "#/$defs/mortalityModel"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "selectors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "age_range": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        "sex": {
+          "type": "string",
+          "enum": ["Female", "Male"]
+        },
+        "ses": {
+          "type": "string",
+          "enum": ["Low", "Medium", "High"]
+        },
+        "education": {
+          "type": "string",
+          "enum": ["Low", "Medium", "High"]
+        },
+        "ethnicity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "geography": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disease": {
+          "type": "string"
+        }
+      }
+    },
+
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end",
+        "extrapolation"
+      ],
+      "properties": {
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        },
+        "extrapolation": {
+          "type": "string",
+          "enum": ["clamp", "error", "nearest"]
+        }
+      }
+    },
+
+    "parameterValue": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+
+    "anchorPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "year",
+        "value"
+      ],
+      "properties": {
+        "year": {
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/parameterValue"
+        }
+      }
+    },
+
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "selectors",
+        "period",
+        "rule_type",
+        "scale",
+        "operation",
+        "priority",
+        "source"
+      ],
+      "properties": {
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selectors": {
+          "$ref": "#/$defs/selectors"
+        },
+        "period": {
+          "$ref": "#/$defs/period"
+        },
+        "rule_type": {
+          "type": "string",
+          "enum": [
+            "constant",
+            "anchor_points",
+            "annual_percent_change"
+          ]
+        },
+        "scale": {
+          "type": "string",
+          "enum": ["identity", "log", "logit"]
+        },
+        "operation": {
+          "type": "string",
+          "enum": ["set", "add", "multiply", "override"]
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "$ref": "#/$defs/parameterValue"
+        },
+        "anchors": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/anchorPoint"
+          }
+        },
+        "annual_rate": {
+          "type": "number",
+          "exclusiveMinimum": -1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "rule_type": {
+                "const": "constant"
+              }
+            }
+          },
+          "then": {
+            "required": ["value"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule_type": {
+                "const": "anchor_points"
+              }
+            }
+          },
+          "then": {
+            "required": ["anchors"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule_type": {
+                "const": "annual_percent_change"
+              }
+            }
+          },
+          "then": {
+            "required": ["annual_rate"]
+          }
+        }
+      ]
+    }
+  }
+}
