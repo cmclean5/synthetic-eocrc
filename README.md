@@ -469,7 +469,7 @@ The current reported status from your test runs is:
 - person- and cohort-level simulation
 - unit tests for utilities, exposures, and simulation flows
 
-### In progress / future work
+### Future work
 - calibration and diagnostic summaries beyond the current driver script
 - nested case-control sampling utilities as modules
 - redesign time-independent education to being parental education
@@ -499,7 +499,7 @@ This refactor aims to keep the simulator:
 
 ---
 
-## Suggested next development steps
+## Next steps
 
 1. add calibration and diagnostic summary functions as reusable modules
 2. refactor nested case-control sampling into modular scripts
