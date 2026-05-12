@@ -474,6 +474,7 @@ The current reported status from your test runs is:
 - nested case-control sampling utilities as modules
 - redesign time-independent education to being parental education
 - redeign adding education attainment as a time-dependent exposure
+- future modules which capture interventions to reduce incidence
 
 ---
 
@@ -503,6 +504,7 @@ This refactor aims to keep the simulator:
 1. add calibration and diagnostic summary functions as reusable modules
 2. refactor nested case-control sampling into modular scripts
 3. redesign framwork to include modules for education attainment exposure
+4. add intervention modules into framework to model it effect
 
 ---
 
