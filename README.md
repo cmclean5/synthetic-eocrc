@@ -13,26 +13,7 @@ The aim of this project is to develop **short-memory** and **long-memory** expos
 - generate synthetic cohort datasets, and
 - benchmark causal observational data models.
 
-The framework is designed to be driven by structured configuration (JSON spec + JSON schema) and to support modular extension to additional exposures, observational processes, and tumour/disease modules.
-
-## Objectives
-
-- **To use observational / empirical public health data to mimic early-onset trends in Scotland.**
-- **To develop a flexible and modularised framework** to enable investigation into additional exposures, observational data, longitudinal patterns, and data missingness patterns.
-- **To explore how best to utilise large language models (LLMs)** to co-create this framework.
-
-## Co-creation and validation note
-
-This work has been **co-created with ELM**, the University of Edinburgh's secure gateway to generative AI based on the **GPT architecture**.
-
-The resulting code and documentation remain a **research prototype** and **still require assessment and validation**, including (but not limited to):
-
-- review of modelling assumptions
-- regression and calibration testing
-- epidemiological/statistical validation of generated outputs
-- scrutiny of spec semantics (schema/config) and rule interpretation
-
-## Project goals
+<!--- The framework is designed to be driven by structured configuration (JSON spec + JSON schema) and to support modular extension to additional exposures, observational processes, and tumour/disease modules.-->
 
 The simulator is designed to:
 
@@ -44,7 +25,25 @@ The simulator is designed to:
 - keep tumour-specific disease logic modular
 - make future extensions more explicit and maintainable
 
-## Current project structure
+## Objectives
+
+- **To use observational / empirical public health data to mimic early-onset trends in Scotland.**
+- **To develop a flexible and modularised framework** to enable investigation into additional exposures, observational data, longitudinal patterns, and data missingness patterns.
+- **To explore how best to utilise large language models (LLMs)** to co-create this framework.
+
+## Co-creation note
+
+This work has been **co-created with ELM**, the University of Edinburgh's secure gateway to generative AI based on the **GPT architecture**.
+
+The resulting code and documentation remain a **research prototype** and **still require assessment and validation**, including (but not limited to):
+
+- review of modelling assumptions
+- regression and calibration testing
+- epidemiological/statistical validation of generated outputs
+- scrutiny of spec semantics (schema/config) and rule interpretation
+
+
+## Project structure
 
 ```text
 synthetic-eocrc/
