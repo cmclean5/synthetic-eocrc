@@ -11,6 +11,7 @@ The first was a large genome-wide association study of EO-CRC patients `(Laskar 
 The aim of this project is to develop **short-memory** and **long-memory** exposure models for **early-onset colorectal cancer (EOCRC)** in order to:
 
 - generate synthetic cohort datasets, and
+- model and investigate cancer historisis, including effect of intervention and prevention strategies 
 - benchmark causal observational data models.
 
 <!--- The framework is designed to be driven by structured configuration (JSON spec + JSON schema) and to support modular extension to additional exposures, observational processes, and tumour/disease modules.-->
