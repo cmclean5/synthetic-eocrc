@@ -336,6 +336,7 @@ simulate_person <- function(id,
                             gap_mean_low_ses_add = 0.25,
                             gap_mean_abs_latent_add = 0.10,
                             gap_sdlog = 0.30) {
+  
   if (!is_scalar_integerish(id)) {
     stop("`id` must be an integer-valued numeric scalar.", call. = FALSE)
   }

@@ -145,6 +145,7 @@ simulate_cohort <- function(n,
                             gap_mean_low_ses_add = 0.25,
                             gap_mean_abs_latent_add = 0.10,
                             gap_sdlog = 0.30) {
+  
   if (!is_scalar_integerish(n) || n < 0) {
     stop("`n` must be a non-negative integer-valued numeric scalar.", call. = FALSE)
   }

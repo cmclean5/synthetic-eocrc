@@ -17,7 +17,10 @@
   source(here::here("R", "disease_crc.R"))
   source(here::here("R", "state_update.R"))
   source(here::here("R", "simulate_person.R"))
-  source(here::here("R", "simulate_cohort.R"))
+  source(here::here("R", "output_builders.R"))
+  #source(here::here("R", "simulate_cohort.R"))
+  #source(here::here("R", "plot_simulation_diagnostics.R"))
+  
   
   ##invisible(TRUE)
 #}

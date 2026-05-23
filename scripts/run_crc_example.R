@@ -2,6 +2,9 @@
 # - modules have been sourced (so simulate_cohort_long + read_sim_spec exist)
 # - we are in a clean-ish environment where we can define spec globally
 
+# load scripts
+source(here::here("scripts", "load_scripts.R"))
+
 # 1) Create `spec` by reading the JSON config (IMPORTANT: variable name is `spec`)
 spec <- read_sim_spec(here::here("inst", "configs", "colorectal_eo.json"))
 validate_sim_spec(spec)

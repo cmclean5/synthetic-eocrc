@@ -324,6 +324,140 @@
   NULL
 }
 
+#Safely compute the sum of a numeric vector.
+#
+# If there are no non-missing values, return NA_real_.
+.sim_cal_sum <- function(x) {
+  if (length(x) == 0 || all(is.na(x))) {
+    return(NA_real_)
+  }
+  
+  sum(x, na.rm = TRUE)
+}
+
+# Build follow-up durations in years from the patient table.
+#
+# Resolution order:
+# 1. raw age-scale follow-up
+# 2. rounded age-scale follow-up
+# 3. raw calendar-time follow-up
+# 4. rounded calendar-time follow-up
+#
+# This helper is used for descriptive follow-up summaries such as mean and total
+# follow-up years.
+.sim_cal_get_followup_years <- function(patient_df) {
+  if (all(c("entry_age_raw", "censor_age_raw") %in% names(patient_df))) {
+    return(patient_df$censor_age_raw - patient_df$entry_age_raw)
+  }
+  
+  if (all(c("entry_age", "censor_age") %in% names(patient_df))) {
+    return(patient_df$censor_age - patient_df$entry_age)
+  }
+  
+  if (all(c("entry_cal_time_raw", "censor_cal_time_raw") %in% names(patient_df))) {
+    return(patient_df$censor_cal_time_raw - patient_df$entry_cal_time_raw)
+  }
+  
+  if (all(c("entry_cal_time", "censor_cal_time") %in% names(patient_df))) {
+    return(patient_df$censor_cal_time - patient_df$entry_cal_time)
+  }
+  
+  rep(NA_real_, nrow(patient_df))
+}
+
+# Build person-time contributions in years from the patient table.
+#
+# Resolution order:
+# 1. raw calendar-time follow-up
+# 2. rounded calendar-time follow-up
+# 3. fallback to generic follow-up duration
+#
+# This helper is used specifically when calculating incidence rates per 100,000
+# person-years.
+.sim_cal_get_person_time_years <- function(patient_df) {
+  if (all(c("entry_cal_time_raw", "censor_cal_time_raw") %in% names(patient_df))) {
+    return(patient_df$censor_cal_time_raw - patient_df$entry_cal_time_raw)
+  }
+  
+  if (all(c("entry_cal_time", "censor_cal_time") %in% names(patient_df))) {
+    return(patient_df$censor_cal_time - patient_df$entry_cal_time)
+  }
+  
+  .sim_cal_get_followup_years(patient_df)
+}
+
+# Compute cohort-level rate summaries from the patient table and event vector.
+#
+# Returned fields include:
+# - n_people
+# - n_cases_total
+# - total_py
+# - cum_risk_per_100k
+# - rate_per_100k_py
+# - se_rate_per_100k_py
+# - cl_rate_per_100k_py
+# - cu_rate_per_100k_py
+.sim_cal_rate_summary <- function(patient_df,
+                                  event_values) {
+  n_people <- nrow(patient_df)
+  
+  n_cases_total <- if (length(event_values) == 0 || all(is.na(event_values))) {
+    NA_real_
+  } else {
+    sum(as.numeric(event_values), na.rm = TRUE)
+  }
+  
+  total_py <- .sim_cal_sum(.sim_cal_get_person_time_years(patient_df))
+  
+  cum_risk_per_100k <- if (is.finite(n_cases_total) && n_people > 0) {
+    1e5 * n_cases_total / n_people
+  } else {
+    NA_real_
+  }
+  
+  rate_per_100k_py <- if (is.finite(n_cases_total) &&
+                          is.finite(total_py) &&
+                          total_py > 0) {
+    1e5 * n_cases_total / total_py
+  } else {
+    NA_real_
+  }
+  
+  se_rate_per_100k_py <- if (is.finite(n_cases_total) &&
+                             is.finite(total_py) &&
+                             total_py > 0) {
+    1e5 * sqrt(n_cases_total) / total_py
+  } else {
+    NA_real_
+  }
+  
+  cl_rate_per_100k_py <- if (is.finite(rate_per_100k_py) &&
+                             is.finite(se_rate_per_100k_py)) {
+    pmax(rate_per_100k_py - (1.96 * se_rate_per_100k_py), 0)
+  } else {
+    NA_real_
+  }
+  
+  cu_rate_per_100k_py <- if (is.finite(rate_per_100k_py) &&
+                             is.finite(se_rate_per_100k_py)) {
+    rate_per_100k_py + (1.96 * se_rate_per_100k_py)
+  } else {
+    NA_real_
+  }
+  
+  list(
+    n_people = n_people,
+    n_cases_total = n_cases_total,
+    total_py = total_py,
+    cum_risk_per_100k = cum_risk_per_100k,
+    rate_per_100k_py = rate_per_100k_py,
+    se_rate_per_100k_py = se_rate_per_100k_py,
+    cl_rate_per_100k_py = cl_rate_per_100k_py,
+    cu_rate_per_100k_py = cu_rate_per_100k_py
+  )
+}
+
+
 # Summarise the patient-level output table.
 summarise_patient_table <- function(patient_df,
                                     event_var = NULL,
@@ -621,12 +755,14 @@ calibration_table_overall_summary <- function(sim_out,
   .output_check_sim_out(sim_out)
   
   patient_df <- sim_out$patient
-  long_df <- sim_out$long
+  long_df    <- sim_out$long
   
   detected_event_var <- .detect_event_var(patient_df, event_var = event_var)
   
   event_values <- if (!is.null(detected_event_var)) patient_df[[detected_event_var]] else rep(NA_real_, nrow(patient_df))
   death_values <- if ("death" %in% names(patient_df)) patient_df$death else rep(NA_real_, nrow(patient_df))
+  
+  rate_summary <- .sim_cal_rate_summary(patient_df, event_values)
   
   followup <- if (all(c("entry_age_raw", "censor_age_raw") %in% names(patient_df))) {
     patient_df$censor_age_raw - patient_df$entry_age_raw
@@ -658,6 +794,10 @@ calibration_table_overall_summary <- function(sim_out,
     mean_censor_age = if ("censor_age" %in% names(patient_df)) .output_mean(patient_df$censor_age) else NA_real_,
     mean_followup_years = .output_mean(followup),
     total_followup_years = .output_sum(followup),
+    rate_per_100k_py = rate_summary$rate_per_100k_py,
+    se_rate_per_100k_py = rate_summary$se_rate_per_100k_py,
+    cl_rate_per_100k_py = rate_summary$cl_rate_per_100k_py,
+    cu_rate_per_100k_py = rate_summary$cu_rate_per_100k_py,
     stage_non_missing_among_cases = stage_non_missing_among_cases,
     stringsAsFactors = FALSE
   )
